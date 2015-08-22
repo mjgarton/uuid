@@ -30,12 +30,10 @@ const (
 // For a given domain/id pair the same token may be returned for up to
 // 7 minutes and 10 seconds.
 func NewDCESecurity(domain Domain, id uint32) UUID {
-	uuid := NewUUID()
-	if uuid != nil {
-		uuid[6] = (uuid[6] & 0x0f) | 0x20 // Version 2
-		uuid[9] = byte(domain)
-		binary.BigEndian.PutUint32(uuid[0:], id)
-	}
+	uuid := UUID{}
+	uuid[6] = (uuid[6] & 0x0f) | 0x20 // Version 2
+	uuid[9] = byte(domain)
+	binary.BigEndian.PutUint32(uuid[0:], id)
 	return uuid
 }
 

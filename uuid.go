@@ -5,7 +5,6 @@
 package uuid
 
 import (
-	"bytes"
 	"crypto/rand"
 	"fmt"
 	"io"
@@ -14,7 +13,7 @@ import (
 
 // A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC
 // 4122.
-type UUID []byte
+type UUID [16]byte
 
 // A Version represents a UUIDs version.
 type Version byte
@@ -39,22 +38,32 @@ func New() string {
 	return NewRandom().String()
 }
 
+func MustParse(s string) UUID {
+	u, err := Parse(s)
+	if err != nil {
+
+		panic(err)
+	}
+	return u
+
+}
+
 // Parse decodes s into a UUID or returns nil.  Both the UUID form of
 // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx and
 // urn:uuid:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx are decoded.
-func Parse(s string) UUID {
+func Parse(s string) (UUID, error) {
 	if len(s) == 36+9 {
 		if strings.ToLower(s[:9]) != "urn:uuid:" {
-			return nil
+			return UUID{}, fmt.Errorf("can't parse %v", s)
 		}
 		s = s[9:]
 	} else if len(s) != 36 {
-		return nil
+		return UUID{}, nil
 	}
 	if s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
-		return nil
+		return UUID{}, fmt.Errorf("can't parse %v", s)
 	}
-	uuid := make([]byte, 16)
+	uuid := UUID{}
 	for i, x := range []int{
 		0, 2, 4, 6,
 		9, 11,
@@ -62,45 +71,45 @@ func Parse(s string) UUID {
 		19, 21,
 		24, 26, 28, 30, 32, 34} {
 		if v, ok := xtob(s[x:]); !ok {
-			return nil
+			return UUID{}, fmt.Errorf("can't parse %v", s)
 		} else {
 			uuid[i] = v
 		}
 	}
-	return uuid
+	return uuid, nil
 }
 
 // Equal returns true if uuid1 and uuid2 are equal.
 func Equal(uuid1, uuid2 UUID) bool {
-	return bytes.Equal(uuid1, uuid2)
+	return uuid1 == uuid2
 }
+
+var emptyUUID = UUID{}
 
 // String returns the string form of uuid, xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 // , or "" if uuid is invalid.
 func (uuid UUID) String() string {
-	if uuid == nil || len(uuid) != 16 {
+	if uuid == emptyUUID {
 		return ""
 	}
-	b := []byte(uuid)
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		b[:4], b[4:6], b[6:8], b[8:10], b[10:])
+		uuid[:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
 }
 
 // URN returns the RFC 2141 URN form of uuid,
 // urn:uuid:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,  or "" if uuid is invalid.
 func (uuid UUID) URN() string {
-	if uuid == nil || len(uuid) != 16 {
+	if uuid == emptyUUID {
 		return ""
 	}
-	b := []byte(uuid)
 	return fmt.Sprintf("urn:uuid:%08x-%04x-%04x-%04x-%012x",
-		b[:4], b[4:6], b[6:8], b[8:10], b[10:])
+		uuid[:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
 }
 
 // Variant returns the variant encoded in uuid.  It returns Invalid if
 // uuid is invalid.
 func (uuid UUID) Variant() Variant {
-	if len(uuid) != 16 {
+	if uuid == emptyUUID {
 		return Invalid
 	}
 	switch {
@@ -119,7 +128,7 @@ func (uuid UUID) Variant() Variant {
 // Version returns the verison of uuid.  It returns false if uuid is not
 // valid.
 func (uuid UUID) Version() (Version, bool) {
-	if len(uuid) != 16 {
+	if uuid == emptyUUID {
 		return 0, false
 	}
 	return Version(uuid[6] >> 4), true

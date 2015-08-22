@@ -112,7 +112,7 @@ func setClockSequence(seq int) {
 // uuid.  It returns false if uuid is not valid.  The time is only well defined
 // for version 1 and 2 UUIDs.
 func (uuid UUID) Time() (Time, bool) {
-	if len(uuid) != 16 {
+	if uuid == emptyUUID {
 		return 0, false
 	}
 	time := int64(binary.BigEndian.Uint32(uuid[0:4]))
@@ -125,7 +125,7 @@ func (uuid UUID) Time() (Time, bool) {
 // if uuid is not valid.  The clock sequence is only well defined for version 1
 // and 2 UUIDs.
 func (uuid UUID) ClockSequence() (int, bool) {
-	if len(uuid) != 16 {
+	if uuid == emptyUUID {
 		return 0, false
 	}
 	return int(binary.BigEndian.Uint16(uuid[8:10])) & 0x3fff, true

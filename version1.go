@@ -21,10 +21,10 @@ func NewUUID() UUID {
 
 	now, seq, err := GetTime()
 	if err != nil {
-		return nil
+		return UUID{}
 	}
 
-	uuid := make([]byte, 16)
+	uuid := UUID{}
 
 	time_low := uint32(now & 0xffffffff)
 	time_mid := uint16((now >> 32) & 0xffff)

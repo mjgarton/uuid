@@ -82,11 +82,11 @@ var constants = []struct {
 }
 
 func testTest(t *testing.T, in string, tt test) {
-	uuid := Parse(in)
-	if ok := (uuid != nil); ok != tt.isuuid {
+	uuid, err := Parse(in)
+	if ok := (err == nil); ok != tt.isuuid {
 		t.Errorf("Parse(%s) got %v expected %v\b", in, ok, tt.isuuid)
 	}
-	if uuid == nil {
+	if uuid == (UUID{}) {
 		return
 	}
 
@@ -143,8 +143,8 @@ func TestNew(t *testing.T) {
 			t.Errorf("New returned duplicated UUID %s\n", s)
 		}
 		m[s] = true
-		uuid := Parse(s)
-		if uuid == nil {
+		uuid, _ := Parse(s)
+		if uuid == (UUID{}) {
 			t.Errorf("New returned %q which does not decode\n", s)
 			continue
 		}
@@ -219,7 +219,7 @@ func TestCoding(t *testing.T) {
 		t.Errorf("%x: urn is %s, expected %s\n", data, v, urn)
 	}
 
-	uuid := Parse(text)
+	uuid, _ := Parse(text)
 	if !Equal(uuid, data) {
 		t.Errorf("%s: decoded to %s, expected %s\n", text, uuid, data)
 	}
@@ -273,7 +273,7 @@ func TestVersion1(t *testing.T) {
 func TestNodeAndTime(t *testing.T) {
 	// Time is February 5, 1998 12:30:23.136364800 AM GMT
 
-	uuid := Parse("7d444840-9dc0-11d1-b245-5ffdce74fad2")
+	uuid := MustParse("7d444840-9dc0-11d1-b245-5ffdce74fad2")
 	node := []byte{0x5f, 0xfd, 0xce, 0x74, 0xfa, 0xd2}
 
 	ts, ok := uuid.Time()
@@ -335,7 +335,7 @@ func TestNodeID(t *testing.T) {
 }
 
 func testDCE(t *testing.T, name string, uuid UUID, domain Domain, id uint32) {
-	if uuid == nil {
+	if uuid == (UUID{}) {
 		t.Errorf("%s failed\n", name)
 		return
 	}
